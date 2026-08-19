@@ -41,6 +41,14 @@ export class BookingService {
     const startAt = parseDateTimeInTimezone(input.dateStr, input.startTimeStr, tz);
     const endAt = new Date(startAt.getTime() + durationMinutes * 60 * 1000);
 
+    // Validate that start time is not in the past
+    const now = new Date();
+    if (!input.bypassConflictCheck && startAt.getTime() < now.getTime() - 5 * 60 * 1000) {
+      throw new ValidationError(
+        `❌ Thời gian bắt đầu (\`${formatTime(startAt, tz)}\` ngày \`${formatDate(startAt, tz)}\`) đã trôi qua trong quá khứ so với hiện tại (\`${formatTime(now, tz)}\` ngày \`${formatDate(now, tz)}\`).\n\n💡 *Gợi ý: Vui lòng chọn khung giờ từ hiện tại trở đi hoặc đặt lịch cho ngày mai.*`
+      );
+    }
+
     // Conflict detection
     if (!input.bypassConflictCheck && !settings.allowOverbooking) {
       const conflictCheck = await availabilityService.checkConflict(input.guildId, startAt, endAt);
@@ -142,6 +150,13 @@ export class BookingService {
 
     const newStartAt = parseDateTimeInTimezone(input.newDateStr, input.newStartTimeStr, tz);
     const newEndAt = new Date(newStartAt.getTime() + booking.durationMinutes * 60 * 1000);
+
+    const now = new Date();
+    if (newStartAt.getTime() < now.getTime() - 5 * 60 * 1000) {
+      throw new ValidationError(
+        `❌ Thời gian dời lịch (\`${formatTime(newStartAt, tz)}\` ngày \`${formatDate(newStartAt, tz)}\`) đã trôi qua trong quá khứ so với hiện tại (\`${formatTime(now, tz)}\` ngày \`${formatDate(now, tz)}\`).`
+      );
+    }
 
     // Conflict check excluding current booking
     const conflictCheck = await availabilityService.checkConflict(input.guildId, newStartAt, newEndAt, booking.id);
