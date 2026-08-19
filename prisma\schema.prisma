@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model GuildSettings {
+  guildId                  String   @id
+  timezone                 String   @default("Asia/Ho_Chi_Minh")
+  minimumBufferMinutes     Int      @default(10)
+  workingHoursJson         String   @default("{\"mon\":{\"start\":\"08:00\",\"end\":\"23:00\",\"enabled\":true},\"tue\":{\"start\":\"08:00\",\"end\":\"23:00\",\"enabled\":true},\"wed\":{\"start\":\"08:00\",\"end\":\"23:00\",\"enabled\":true},\"thu\":{\"start\":\"08:00\",\"end\":\"23:00\",\"enabled\":true},\"fri\":{\"start\":\"08:00\",\"end\":\"23:00\",\"enabled\":true},\"sat\":{\"start\":\"08:00\",\"end\":\"23:00\",\"enabled\":true},\"sun\":{\"start\":\"08:00\",\"end\":\"23:00\",\"enabled\":true}}")
+  allowOverbooking         Boolean  @default(false)
+  reminderOffsetsMinutes   String   @default("30,10,0")
+  dailySummaryTime         String   @default("23:00")
+  tomorrowSummaryTime      String   @default("21:00")
+
+  // Discord Channel & Category IDs
+  categoryIdDashboard      String?
+  categoryIdManagement     String?
+  categoryIdSystem         String?
+
+  channelOverviewId        String?
+  channelTodayId           String?
+  channelWeekId            String?
+  channelFreeSlotsId       String?
+  channelRemindersId       String?
+
+  channelCustomersId       String?
+  channelCompletedId       String?
+  channelCancelledId       String?
+  channelNotesId           String?
+
+  channelCommandId         String?
+  channelLogId             String?
+  channelSettingsId        String?
+
+  // Persistent Message IDs
+  msgOverviewId            String?
+  msgTodayId               String?
+  msgWeekId                String?
+  msgFreeSlotsId           String?
+  msgControlPanelId        String?
+
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model Customer {
+  id                String    @id @default(uuid())
+  name              String
+  discordUserId     String?
+  discordUsername   String?
+  phone             String?
+  note              String?
+  totalBookings     Int       @default(0)
+  completedBookings Int       @default(0)
+  cancelledBookings Int       @default(0)
+  totalMinutes      Int       @default(0)
+
+  bookings          Booking[]
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([name])
+  @@index([discordUserId])
+}
+
+model Booking {
+  id                 String     @id @default(uuid())
+  bookingCode        String     @unique
+  guildId            String
+  customerId         String
+  customerName       String
+  discordUserId      String?
+  startAt            DateTime
+  endAt              DateTime
+  durationMinutes    Int
+  status             String     @default("CONFIRMED") // PENDING, CONFIRMED, PAID, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
+  note               String?
+  createdBy          String
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+
+  customer           Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  reminders          Reminder[]
+
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([guildId])
+  @@index([startAt])
+  @@index([endAt])
+  @@index([status])
+  @@index([customerId])
+  @@index([bookingCode])
+}
+
+model BlockedTime {
+  id        String   @id @default(uuid())
+  guildId   String
+  startAt   DateTime
+  endAt     DateTime
+  reason    String
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([guildId])
+  @@index([startAt])
+  @@index([endAt])
+}
+
+model Reminder {
+  id            String    @id @default(uuid())
+  guildId       String
+  bookingId     String
+  offsetMinutes Int
+  scheduledAt   DateTime
+  sentAt        DateTime?
+  status        String    @default("PENDING") // PENDING, SENT, CANCELLED, MISSED
+
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([guildId])
+  @@index([bookingId])
+  @@index([scheduledAt])
+  @@index([status])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  guildId      String
+  action       String   // BOOKING_CREATED, BOOKING_UPDATED, BOOKING_RESCHEDULED, BOOKING_CANCELLED, BOOKING_COMPLETED, TIME_BLOCK_CREATED, TIME_BLOCK_REMOVED, SETTINGS_CHANGED
+  targetId     String?
+  targetType   String
+  executorId   String
+  executorTag  String
+  detailsJson  String
+  createdAt    DateTime @default(now())
+
+  @@index([guildId])
+  @@index([createdAt])
+  @@index([action])
+}
