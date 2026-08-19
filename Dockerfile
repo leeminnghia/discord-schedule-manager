@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install tzdata and openssl
+RUN apk add --no-cache tzdata openssl
+
 # Copy package files and install dependencies
 COPY package*.json tsconfig.json ./
 COPY prisma ./prisma/
@@ -22,9 +25,10 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV TZ=Asia/Ho_Chi_Minh
 
-# Install openssl for Prisma
-RUN apk add --no-cache openssl
+# Install tzdata and openssl for Prisma & accurate Vietnam timezone
+RUN apk add --no-cache openssl tzdata
 
 COPY package*.json ./
 COPY prisma ./prisma/
