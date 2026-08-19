@@ -5,6 +5,7 @@ import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 
 let server: http.Server | null = null;
+let keepAliveTimer: NodeJS.Timeout | null = null;
 
 export function startHealthServer(port: number = env.PORT): http.Server {
   server = http.createServer(async (req, res) => {
@@ -41,10 +42,32 @@ export function startHealthServer(port: number = env.PORT): http.Server {
     logger.info(`🌐 Health check server listening on 0.0.0.0:${port} (/health)`);
   });
 
+  // Start 24/7 Keep-Alive Self-Ping every 8 minutes to prevent Render Free Plan from sleeping
+  startKeepAlivePing();
+
   return server;
 }
 
+function startKeepAlivePing() {
+  const publicUrl = process.env.RENDER_EXTERNAL_URL || 'https://discord-schedule-manager.onrender.com';
+  const pingInterval = 8 * 60 * 1000; // Every 8 minutes
+
+  keepAliveTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${publicUrl}/health`);
+      logger.info(`💓 Keep-alive ping to ${publicUrl}/health: HTTP ${res.status}`);
+    } catch (err: any) {
+      logger.warn(`⚠️ Keep-alive ping failed: ${err?.message}`);
+    }
+  }, pingInterval);
+}
+
 export function stopHealthServer(): Promise<void> {
+  if (keepAliveTimer) {
+    clearInterval(keepAliveTimer);
+    keepAliveTimer = null;
+  }
+
   return new Promise((resolve) => {
     if (server) {
       server.close(() => {
