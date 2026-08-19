@@ -37,8 +37,8 @@ export function startHealthServer(port: number = env.PORT): http.Server {
     res.end(JSON.stringify({ error: 'Not Found' }));
   });
 
-  server.listen(port, () => {
-    logger.info(`🌐 Health check server listening on port ${port} (/health)`);
+  server.listen(port, '0.0.0.0', () => {
+    logger.info(`🌐 Health check server listening on 0.0.0.0:${port} (/health)`);
   });
 
   return server;
