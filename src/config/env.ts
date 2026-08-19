@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
+process.env.TZ = 'Asia/Ho_Chi_Minh';
 dotenv.config();
 
 const envSchema = z.object({
