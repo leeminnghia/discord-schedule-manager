@@ -8,7 +8,7 @@ const envSchema = z.object({
   DISCORD_CLIENT_ID: z.string().min(1, 'DISCORD_CLIENT_ID is required'),
   DISCORD_GUILD_ID: z.string().optional(),
   OWNER_USER_ID: z.string().optional(),
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DATABASE_URL: z.string().default('file:./dev.db'),
   DEFAULT_TIMEZONE: z.string().default('Asia/Ho_Chi_Minh'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
