@@ -8,7 +8,7 @@ let server: http.Server | null = null;
 
 export function startHealthServer(port: number = env.PORT): http.Server {
   server = http.createServer(async (req, res) => {
-    if (req.url === '/health' && req.method === 'GET') {
+    if ((req.url === '/' || req.url === '/health') && req.method === 'GET') {
       let dbStatus = 'disconnected';
       try {
         await prisma.$queryRaw`SELECT 1`;
