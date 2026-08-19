@@ -19,7 +19,10 @@ import { logger } from './utils/logger.js';
 async function bootstrap() {
   logger.info('🚀 Starting Discord Schedule Manager...');
 
-  // 1. Connect database
+  // 1. Start HTTP Health check server immediately (critical for Render port detection)
+  startHealthServer(env.PORT);
+
+  // 2. Connect database
   await connectDatabase();
 
   // 2. Setup interaction listener
@@ -60,9 +63,6 @@ async function bootstrap() {
     reminderScheduler.start();
     autoStatusScheduler.start();
     dailySummaryScheduler.start();
-
-    // Start HTTP Health check server
-    startHealthServer(env.PORT);
 
     // Initial refresh of dashboards for all guilds
     const allSettings = await prisma.guildSettings.findMany();
