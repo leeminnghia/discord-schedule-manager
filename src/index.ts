@@ -46,36 +46,40 @@ async function bootstrap() {
 
   // 3. Client Ready event
   discordClient.once(Events.ClientReady, async (client) => {
-    logger.info(`✅ Logged in as ${client.user.tag}!`);
+    try {
+      logger.info(`✅ Logged in as ${client.user.tag}!`);
 
-    const joinedGuilds = client.guilds.cache.map((g) => g.id);
-    for (const g of client.guilds.cache.values()) {
-      logger.info(`🏰 Joined Server: "${g.name}" (ID: ${g.id})`);
+      const joinedGuilds = client.guilds.cache.map((g) => g.id);
+      for (const g of client.guilds.cache.values()) {
+        logger.info(`🏰 Joined Server: "${g.name}" (ID: ${g.id})`);
+      }
+
+      // Deploy slash commands directly to all joined guilds (Instant) and globally
+      await deployCommands(joinedGuilds);
+
+      // Startup recovery for reminders
+      await reminderService.processStartupRecovery();
+
+      // Start schedulers
+      reminderScheduler.start();
+      autoStatusScheduler.start();
+      dailySummaryScheduler.start();
+
+      // Initial refresh of dashboards for all guilds
+      const allSettings = await prisma.guildSettings.findMany();
+      for (const s of allSettings) {
+        await dashboardService.refreshAll(s.guildId);
+      }
+
+      logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      logger.info('🎉 Bot ready.');
+      logger.info('📦 Database connected.');
+      logger.info('⏰ Scheduler ready.');
+      logger.info('📊 Dashboard updated.');
+      logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    } catch (err) {
+      logger.error({ err }, 'Error during ClientReady initialization');
     }
-
-    // Deploy slash commands directly to all joined guilds (Instant) and globally
-    await deployCommands(joinedGuilds);
-
-    // Startup recovery for reminders
-    await reminderService.processStartupRecovery();
-
-    // Start schedulers
-    reminderScheduler.start();
-    autoStatusScheduler.start();
-    dailySummaryScheduler.start();
-
-    // Initial refresh of dashboards for all guilds
-    const allSettings = await prisma.guildSettings.findMany();
-    for (const s of allSettings) {
-      await dashboardService.refreshAll(s.guildId);
-    }
-
-    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    logger.info('🎉 Bot ready.');
-    logger.info('📦 Database connected.');
-    logger.info('⏰ Scheduler ready.');
-    logger.info('📊 Dashboard updated.');
-    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   });
 
   // 4. Log in to Discord
