@@ -1,4 +1,4 @@
-import { format, parse, startOfDay, endOfDay, addDays, startOfWeek, endOfWeek } from 'date-fns';
+import { startOfDay, endOfDay, addDays, startOfWeek, endOfWeek } from 'date-fns';
 import { toZonedTime, fromZonedTime, format as formatTz } from 'date-fns-tz';
 import { TIMEZONE } from '../config/constants.js';
 import { ValidationError } from './errors.js';
@@ -16,10 +16,10 @@ export const VIETNAMESE_WEEKDAYS: Record<number, string> = {
 export const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 /**
- * Gets the current Date converted to Vietnam zoned time.
+ * Gets current Date object (standard UTC timestamp).
  */
 export function nowInTimezone(tz: string = TIMEZONE): Date {
-  return toZonedTime(new Date(), tz);
+  return new Date();
 }
 
 /**
@@ -128,11 +128,6 @@ export function parseDateTimeInTimezone(dateStr: string, timeStr: string, tz: st
   const secondsStr = normalizedTime === '23:59' && (timeStr === '24:00' || timeStr === '24h') ? '59' : '00';
   const isoLocalString = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:${secondsStr}`;
 
-  const localDate = new Date(isoLocalString);
-  if (isNaN(localDate.getTime())) {
-    throw new ValidationError(`Ngày giờ "${dateStr} ${timeStr}" không hợp lệ.`);
-  }
-
   return fromZonedTime(isoLocalString, tz);
 }
 
@@ -144,19 +139,19 @@ export function parseDateStartOfDay(dateStr: string, tz: string = TIMEZONE): Dat
 }
 
 export function formatFullDateTime(date: Date, tz: string = TIMEZONE): string {
-  return formatTz(toZonedTime(date, tz), 'dd/MM/yyyy HH:mm', { timeZone: tz });
+  return formatTz(date, 'dd/MM/yyyy HH:mm', { timeZone: tz });
 }
 
 export function formatTime(date: Date, tz: string = TIMEZONE): string {
-  return formatTz(toZonedTime(date, tz), 'HH:mm', { timeZone: tz });
+  return formatTz(date, 'HH:mm', { timeZone: tz });
 }
 
 export function formatDate(date: Date, tz: string = TIMEZONE): string {
-  return formatTz(toZonedTime(date, tz), 'dd/MM/yyyy', { timeZone: tz });
+  return formatTz(date, 'dd/MM/yyyy', { timeZone: tz });
 }
 
 export function formatDateShort(date: Date, tz: string = TIMEZONE): string {
-  return formatTz(toZonedTime(date, tz), 'dd/MM', { timeZone: tz });
+  return formatTz(date, 'dd/MM', { timeZone: tz });
 }
 
 export function getVietnameseWeekday(date: Date, tz: string = TIMEZONE): string {
